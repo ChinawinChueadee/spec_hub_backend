@@ -1,13 +1,13 @@
 import { Server } from "socket.io";
 
-import { config } from "../configs/index.js";
+import { allowedOrigins } from "../configs/index.js";
 import { authenticateSocket } from "../middlewares/socketAuth.middleware.js";
 import { registerSupportChatHandlers } from "./supportChat.socket.js";
 
 export const createSocketServer = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: config.client_url,
+      origin: allowedOrigins,
       methods: ["GET", "POST"],
       credentials: true,
     },
