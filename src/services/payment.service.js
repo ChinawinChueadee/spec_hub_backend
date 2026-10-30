@@ -288,6 +288,25 @@ export const findExpiredAwaitingPaymentCheckouts = async (
   });
 };
 
+// Finds the oldest unpaid Checkout so the expiration
+// job knows when the next one is due.
+export const findOldestAwaitingPaymentCheckout = async (db = prisma) => {
+  return await db.checkout.findFirst({
+    where: {
+      status: "AWAITING_PAYMENT",
+    },
+
+    select: {
+      id: true,
+      createdAt: true,
+    },
+
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+};
+
 // Atomically expires an unpaid Checkout and releases
 // its reserved Listings.
 export const expireUnpaidCheckout = async ({

@@ -1,6 +1,8 @@
 import { randomUUID } from "crypto";
 import createHttpError from "http-errors";
 
+import { scheduleCheckoutExpiration } from "../jobs/checkout-expiration.job.js";
+
 import {
   createCheckoutRecord,
   createOrdersForCheckout,
@@ -152,6 +154,8 @@ export const createCheckout = async (req, res, next) => {
         pricing,
       };
     });
+
+    scheduleCheckoutExpiration(result.checkout.createdAt);
 
     return res.status(201).json({
       success: true,
