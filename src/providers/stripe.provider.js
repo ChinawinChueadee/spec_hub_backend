@@ -1,7 +1,7 @@
 import createHttpError from "http-errors";
 import Stripe from "stripe";
 
-import { config } from "../configs/index.js";
+import { allowedOrigins, config } from "../configs/index.js";
 import { normalizeStripeError } from "../utils/provider-error.js";
 
 const stripe = new Stripe(config.stripe_secret_key);
@@ -157,11 +157,11 @@ export const createStripeCheckoutSession = async ({
         expires_at: expiresAt,
 
         success_url:
-          `${config.client_url}/payment/success` +
+          `${allowedOrigins[0]}/payment/success` +
           "?session_id={CHECKOUT_SESSION_ID}",
 
         cancel_url:
-          `${config.client_url}/payment/cancel` + `?checkoutId=${checkoutId}`,
+          `${allowedOrigins[0]}/payment/cancel` + `?checkoutId=${checkoutId}`,
       },
       {
         /*

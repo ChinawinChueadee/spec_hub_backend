@@ -25,8 +25,7 @@ export const config = {
   stripe_secret_key: process.env.STRIPE_SECRET_KEY || "",
   stripe_publishable_key: process.env.STRIPE_PUBLISHABLE_KEY || "",
   stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET || "",
-  client_url:
-    process.env.CLIENT_URL || "https://spec-hub-frontend-chinawin.vercel.app/",
+  client_url: process.env.CLIENT_URL || "http://localhost:5173",
   gemini_api: process.env.GEMINI_API_KEY || "",
   tavily_api: process.env.TAVILY_API_KEY || "",
   gemini_model: process.env.GEMINI_MODEL || "",
@@ -42,8 +41,18 @@ export const config = {
   ),
 };
 
+/*
+ * CLIENT_URL may hold several origins separated by commas.
+ * Trailing slashes are removed because the browser's Origin
+ * header never has one.
+ */
+export const allowedOrigins = config.client_url
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+
 export const corsOptions = {
-  origin: config.client_url, // Allow only this domain (e.g., your React Vite dev server)
+  origin: allowedOrigins, // Allow only these domains (e.g., your React Vite dev server)
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed HTTP methods
   allowedHeaders: ["Content-Type", "Authorization"], // Allowed custom headers
   optionsSuccessStatus: 200, // Legacy browser support
