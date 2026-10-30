@@ -318,22 +318,166 @@ const mockCategories = [
       },
     ],
   },
+
+  {
+    name: "CPU",
+    questions: [
+      {
+        label: "Does the CPU boot and run normally?",
+        answerType: "BOOLEAN",
+        options: null,
+        isRequired: true,
+        sortOrder: 1,
+      },
+      {
+        label: "Has the CPU been stress tested?",
+        answerType: "SELECT",
+        options: ["Tested and stable", "Has issues", "Not tested"],
+        isRequired: true,
+        sortOrder: 2,
+      },
+      {
+        label: "Are the pins or contact pads in good condition?",
+        answerType: "SELECT",
+        options: ["No damage", "Minor damage", "Major damage"],
+        isRequired: true,
+        sortOrder: 3,
+      },
+      {
+        label: "Has the CPU been overclocked?",
+        answerType: "BOOLEAN",
+        options: null,
+        isRequired: true,
+        sortOrder: 4,
+      },
+    ],
+  },
+
+  {
+    name: "Mainboard",
+    questions: [
+      {
+        label: "Does the mainboard POST and boot normally?",
+        answerType: "BOOLEAN",
+        options: null,
+        isRequired: true,
+        sortOrder: 1,
+      },
+      {
+        label: "Do all RAM slots, PCIe slots, and ports work?",
+        answerType: "SELECT",
+        options: ["All working", "Some issues", "Not working"],
+        isRequired: true,
+        sortOrder: 2,
+      },
+      {
+        label: "Is the CPU socket in good condition?",
+        answerType: "SELECT",
+        options: ["No bent pins", "Minor damage", "Major damage"],
+        isRequired: true,
+        sortOrder: 3,
+      },
+      {
+        label: "Is the I/O shield included?",
+        answerType: "BOOLEAN",
+        options: null,
+        isRequired: true,
+        sortOrder: 4,
+      },
+    ],
+  },
+
+  {
+    name: "Case",
+    questions: [
+      {
+        label: "Do the front panel ports and buttons work?",
+        answerType: "BOOLEAN",
+        options: null,
+        isRequired: true,
+        sortOrder: 1,
+      },
+      {
+        label: "Are the side panels in good condition?",
+        answerType: "SELECT",
+        options: ["No damage", "Scratches", "Cracked or broken"],
+        isRequired: true,
+        sortOrder: 2,
+      },
+      {
+        label: "Do the included fans work properly?",
+        answerType: "SELECT",
+        options: ["All working", "Some issues", "No fans included"],
+        isRequired: true,
+        sortOrder: 3,
+      },
+      {
+        label: "Are all screws and accessories included?",
+        answerType: "BOOLEAN",
+        options: null,
+        isRequired: true,
+        sortOrder: 4,
+      },
+    ],
+  },
 ];
 
-const main = async () => {
-  console.log("Cleaning existing listing test data...");
+/*
+ * node prisma/mock.js                          wipe and recreate everything
+ * node prisma/mock.js --only=CPU,Mainboard,Case add only these Categories,
+ *                                              keeping existing data
+ */
+const onlyArg = process.argv.find((arg) => arg.startsWith("--only="));
+const onlyNames = onlyArg
+  ? onlyArg
+      .slice("--only=".length)
+      .split(",")
+      .map((name) => name.trim())
+      .filter(Boolean)
+  : null;
 
-  await prisma.$transaction([
-    prisma.sellerConditionAnswer.deleteMany(),
-    prisma.listingImage.deleteMany(),
-    prisma.listing.deleteMany(),
-    prisma.conditionQuestion.deleteMany(),
-    prisma.category.deleteMany(),
-  ]);
+const main = async () => {
+  let categoriesToCreate = mockCategories;
+
+  if (onlyNames) {
+    const unknownNames = onlyNames.filter(
+      (name) => !mockCategories.some((item) => item.name === name),
+    );
+
+    if (unknownNames.length > 0) {
+      throw new Error(`Unknown Categories: ${unknownNames.join(", ")}`);
+    }
+
+    const existing = await prisma.category.findMany({
+      where: { name: { in: onlyNames } },
+      select: { name: true },
+    });
+
+    const existingNames = existing.map((category) => category.name);
+
+    for (const name of existingNames) {
+      console.log(`Skipped ${name}: Category already exists`);
+    }
+
+    categoriesToCreate = mockCategories.filter(
+      (item) =>
+        onlyNames.includes(item.name) && !existingNames.includes(item.name),
+    );
+  } else {
+    console.log("Cleaning existing listing test data...");
+
+    await prisma.$transaction([
+      prisma.sellerConditionAnswer.deleteMany(),
+      prisma.listingImage.deleteMany(),
+      prisma.listing.deleteMany(),
+      prisma.conditionQuestion.deleteMany(),
+      prisma.category.deleteMany(),
+    ]);
+  }
 
   console.log("Creating categories and condition questions...");
 
-  for (const item of mockCategories) {
+  for (const item of categoriesToCreate) {
     const category = await prisma.category.create({
       data: {
         name: item.name,
